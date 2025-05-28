@@ -2,10 +2,9 @@
 // src/lib/agent-service.ts
 import type { Agent } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 
-// The mockAgents array can be kept for fallback or initial seeding,
-// but primary functions will now use Firestore.
+// The mockAgents array can be kept for fallback or initial seeding.
 export const mockAgents: Agent[] = [
   {
     id: 'did:nanda:agent-translator-001',
@@ -109,6 +108,32 @@ export const mockAgents: Agent[] = [
     addr_ttl: 3600,
     addr_facts_url: "https://codegenius.com/.well-known/agent-facts-devmentor.jsonld"
   },
+  {
+    id: 'did:nanda:agent-dbquery-005',
+    name: 'DataOracle',
+    ansName: 'acp://DataOracle.DatabaseQuery.QueryWorks.v1.2.trusted',
+    capability: 'Database Query',
+    capabilities: ['SQL Query Execution', 'NoSQL Data Retrieval', 'Data Aggregation'],
+    provider: 'QueryWorks Inc.',
+    version: '1.2',
+    extension: 'trusted',
+    description: 'A powerful AI agent for securely querying various types of databases and retrieving structured data. Supports natural language queries and returns results in multiple formats.',
+    endpoints: {
+      "@type": "nanda:EndpointSet",
+      static_endpoint: ["https://api.queryworks.com/query/v1.2"],
+      adaptive_router_url: "https://router.queryworks.com/query"
+    },
+    attestations: ["did:nanda:attestation-queryworks-pci-dss-v1"],
+    protocolExtensions: {
+      "@type": "ans:ProtocolExtensionSet",
+      acp: { "@type": "ACPProfile", name: "DataOracle ACP", details: { supportedDatabases: ["PostgreSQL", "MongoDB", "MySQL"] } }
+    },
+    avatarUrl: 'https://placehold.co/100x100.png',
+    dataAiHint: 'database tech',
+    registeredAt: new Date(2023, 8, 5).toISOString(), // Sep 5, 2023
+    addr_ttl: 3000,
+    addr_facts_url: "https://queryworks.com/.well-known/agent-facts-dataoracle.jsonld"
+  }
 ];
 
 
@@ -136,20 +161,37 @@ export const getAgentById = async (id: string): Promise<Agent | undefined> => {
 export const getAllAgents = async (): Promise<Agent[]> => {
   try {
     const agentsCollectionRef = collection(db, "agents");
-    const agentSnapshot = await getDocs(agentsCollectionRef);
-    const agentsList = agentSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Agent));
+    let agentSnapshot = await getDocs(agentsCollectionRef);
+    let agentsList = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
     
-    // If Firestore is empty, you could populate it with mock data once, or return mock data as a fallback.
-    // For now, if it's empty, it returns an empty list.
-    if (agentsList.length === 0) {
-        console.log("No agents found in Firestore. Consider seeding with mock data if this is unexpected.");
-        // Example: return mockAgents; // to show mock data if db is empty
+    if (agentsList.length === 0 && mockAgents.length > 0) {
+        console.log("No agents found in Firestore. Seeding database with mock data...");
+        try {
+            const batch = writeBatch(db);
+            mockAgents.forEach(agent => {
+                const agentRef = doc(db, "agents", agent.id);
+                // Ensure all fields are defined, especially registeredAt which might be generated
+                const agentData = { ...agent, registeredAt: agent.registeredAt || new Date().toISOString() };
+                batch.set(agentRef, agentData);
+            });
+            await batch.commit();
+            console.log("Mock data seeded successfully to Firestore.");
+            // Re-fetch after seeding to ensure we return the live data
+            agentSnapshot = await getDocs(agentsCollectionRef);
+            agentsList = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
+            return agentsList; // Return the freshly seeded and fetched data
+        } catch (seedError) {
+            console.error("Error seeding mock data to Firestore:", seedError);
+            // If seeding fails, return the mockAgents array as a fallback for the UI to display something
+            console.log("Falling back to returning local mock agents due to seeding error.");
+            return mockAgents; 
+        }
     }
     return agentsList;
   } catch (error) {
     console.error("Error fetching all agents from Firestore:", error);
-    // Fallback to mock data in case of error, or return empty list
-    // return mockAgents; 
-    return [];
+    // Fallback to mock data in case of initial fetch error (before seeding attempt)
+    console.log("Falling back to returning local mock agents due to fetch error.");
+    return mockAgents; 
   }
 };
