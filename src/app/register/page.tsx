@@ -94,6 +94,8 @@ export default function RegisterAgentPage() {
       // For simplicity, these are omitted from the form but could be part of a more advanced registration
     };
 
+    console.log("Attempting to register agent with data:", JSON.stringify(agentToRegister, null, 2));
+
     try {
       await setDoc(doc(db, "agents", agentToRegister.id), agentToRegister);
       console.log("Agent Registration Data (Final to Firestore):", agentToRegister);
@@ -126,7 +128,7 @@ export default function RegisterAgentPage() {
       console.error("Error registering agent to Firestore:", error);
       toast({
         title: "Registration Failed",
-        description: `Could not save agent to database. Error: ${error instanceof Error ? error.message : String(error)}`,
+        description: `Could not save agent to database. Error: ${error instanceof Error ? error.message : String(error)}. Please check your Firebase setup, .env configuration, and Firestore security rules. Also, check the browser console for more details.`,
         variant: "destructive",
       });
     }
