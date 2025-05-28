@@ -2,7 +2,7 @@
 // src/lib/agent-service.ts
 import type { Agent } from '@/lib/types';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch } from 'firebase/firestore';
 
 // The mockAgents array can be kept for fallback or initial seeding.
 export const mockAgents: Agent[] = [
@@ -159,9 +159,15 @@ export const getAgentById = async (id: string): Promise<Agent | undefined> => {
 };
 
 export const getAllAgents = async (): Promise<Agent[]> => {
-  try {
+  const FETCH_TIMEOUT = 10000; // 10 seconds
+
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('Firestore fetch timed out')), FETCH_TIMEOUT)
+  );
+
+  const firestoreFetchOperation = async (): Promise<Agent[]> => {
     const agentsCollectionRef = collection(db, "agents");
-    let agentSnapshot = await getDocs(agentsCollectionRef);
+    const agentSnapshot = await getDocs(agentsCollectionRef);
     let agentsList = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
     
     if (agentsList.length === 0 && mockAgents.length > 0) {
@@ -177,8 +183,8 @@ export const getAllAgents = async (): Promise<Agent[]> => {
             await batch.commit();
             console.log("Mock data seeded successfully to Firestore.");
             // Re-fetch after seeding to ensure we return the live data
-            agentSnapshot = await getDocs(agentsCollectionRef);
-            agentsList = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
+            const freshSnapshot = await getDocs(agentsCollectionRef);
+            agentsList = freshSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
             return agentsList; // Return the freshly seeded and fetched data
         } catch (seedError) {
             console.error("Error seeding mock data to Firestore:", seedError);
@@ -188,10 +194,19 @@ export const getAllAgents = async (): Promise<Agent[]> => {
         }
     }
     return agentsList;
-  } catch (error) {
-    console.error("Error fetching all agents from Firestore:", error);
-    // Fallback to mock data in case of initial fetch error (before seeding attempt)
-    console.log("Falling back to returning local mock agents due to fetch error.");
+  };
+
+  try {
+    // Race the fetch operation (which includes initial fetch and potential seeding) against the timeout
+    const result = await Promise.race([firestoreFetchOperation(), timeoutPromise]);
+    return result;
+  } catch (error: any) {
+    if (error && error.message === 'Firestore fetch timed out') {
+      console.warn(`Firestore operation timed out after ${FETCH_TIMEOUT / 1000} seconds. Falling back to mock agents.`);
+    } else {
+      console.error("Error during Firestore operation or timeout:", error);
+      console.log("Falling back to returning local mock agents due to an unexpected error or timeout.");
+    }
     return mockAgents; 
   }
 };
