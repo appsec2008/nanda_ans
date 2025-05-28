@@ -145,34 +145,45 @@ export const getAgentById = async (id: string): Promise<Agent | undefined> => {
     if (agentSnap.exists()) {
       return { id: agentSnap.id, ...agentSnap.data() } as Agent;
     } else {
-      console.warn(`Agent with ID ${id} not found in Firestore.`);
-      // Fallback to mock data if needed, or just return undefined
-      // return mockAgents.find(agent => agent.id === id);
+      console.warn(`Agent with ID ${id} not found in Firestore. Checking mock data.`);
+      // Fallback to mock data if not found in Firestore
+      const mockAgent = mockAgents.find(agent => agent.id === id);
+      if (mockAgent) {
+        return mockAgent;
+      }
+      console.warn(`Agent with ID ${id} not found in mock data either.`);
       return undefined;
     }
   } catch (error) {
     console.error("Error fetching agent by ID from Firestore:", error);
     // Fallback or rethrow
-    // return mockAgents.find(agent => agent.id === id);
+    const mockAgent = mockAgents.find(agent => agent.id === id);
+    if (mockAgent) {
+        console.warn(`Falling back to mock agent with ID ${id} due to Firestore error.`);
+        return mockAgent;
+    }
     return undefined;
   }
 };
 
 export const getAllAgents = async (): Promise<Agent[]> => {
-  const FETCH_TIMEOUT = 10000; // 10 seconds
+  const FETCH_TIMEOUT = 3000; // 3 seconds
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('Firestore fetch timed out')), FETCH_TIMEOUT)
   );
 
-  const firestoreFetchOperation = async (): Promise<Agent[]> => {
+  const firestoreFetchAndCombineOperation = async (): Promise<Agent[]> => {
+    let agentsListFromFirestore: Agent[] = [];
     const agentsCollectionRef = collection(db, "agents");
-    const agentSnapshot = await getDocs(agentsCollectionRef);
-    let agentsList = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
-    
-    if (agentsList.length === 0 && mockAgents.length > 0) {
-        console.log("No agents found in Firestore. Seeding database with mock data...");
-        try {
+
+    try {
+        const agentSnapshot = await getDocs(agentsCollectionRef);
+        agentsListFromFirestore = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
+
+        // Seeding logic (only if Firestore is completely empty)
+        if (agentsListFromFirestore.length === 0 && mockAgents.length > 0) {
+            console.log("No agents found in Firestore. Seeding database with mock data...");
             const batch = writeBatch(db);
             mockAgents.forEach(agent => {
                 const agentRef = doc(db, "agents", agent.id);
@@ -182,31 +193,43 @@ export const getAllAgents = async (): Promise<Agent[]> => {
             });
             await batch.commit();
             console.log("Mock data seeded successfully to Firestore.");
-            // Re-fetch after seeding to ensure we return the live data
-            const freshSnapshot = await getDocs(agentsCollectionRef);
-            agentsList = freshSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
-            return agentsList; // Return the freshly seeded and fetched data
-        } catch (seedError) {
-            console.error("Error seeding mock data to Firestore:", seedError);
-            // If seeding fails, return the mockAgents array as a fallback for the UI to display something
-            console.log("Falling back to returning local mock agents due to seeding error.");
-            return mockAgents; 
+            // After seeding, Firestore now contains the mockAgents.
+            agentsListFromFirestore = [...mockAgents]; 
         }
+    } catch (dbError) {
+        console.error("Error fetching or seeding agents from Firestore:", dbError);
+        // If there's an error with Firestore, agentsListFromFirestore will remain empty or partially filled.
+        // The merge logic below will handle this gracefully.
     }
-    return agentsList;
+    
+    // Combine mockAgents with unique agents from Firestore
+    // Start with a deep copy of mockAgents to prevent accidental mutation if objects are complex.
+    const combinedAgents = mockAgents.map(agent => ({...agent})); 
+    const mockAgentIds = new Set(mockAgents.map(agent => agent.id));
+
+    // Add agents from Firestore that are not already in mockAgents (based on ID)
+    agentsListFromFirestore.forEach(dbAgent => {
+        if (!mockAgentIds.has(dbAgent.id)) {
+            combinedAgents.push({...dbAgent});
+        }
+    });
+
+    return combinedAgents;
   };
 
   try {
-    // Race the fetch operation (which includes initial fetch and potential seeding) against the timeout
-    const result = await Promise.race([firestoreFetchOperation(), timeoutPromise]);
+    // Race the fetch operation against the timeout
+    const result = await Promise.race([firestoreFetchAndCombineOperation(), timeoutPromise]);
     return result;
   } catch (error: any) {
+    let fallbackMessage = "Falling back to returning local mock agents due to an unexpected error or timeout.";
     if (error && error.message === 'Firestore fetch timed out') {
-      console.warn(`Firestore operation timed out after ${FETCH_TIMEOUT / 1000} seconds. Falling back to mock agents.`);
+      fallbackMessage = `Firestore operation timed out after ${FETCH_TIMEOUT / 1000} seconds. Falling back to mock agents.`;
+      console.warn(fallbackMessage);
     } else {
       console.error("Error during Firestore operation or timeout:", error);
-      console.log("Falling back to returning local mock agents due to an unexpected error or timeout.");
     }
-    return mockAgents; 
+    // If timeout or any other error, return only a copy of mockAgents
+    return mockAgents.map(agent => ({...agent})); 
   }
 };
