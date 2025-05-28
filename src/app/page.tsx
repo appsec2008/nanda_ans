@@ -8,7 +8,7 @@ import AgentCard from '@/components/agents/AgentCard';
 import AgentSearchForm from '@/components/agents/AgentSearchForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BotMessageSquare } from 'lucide-react';
+import { BotMessageSquare, ShieldCheck } from 'lucide-react';
 
 export default function DiscoverAgentsPage() {
   const [allAgents, setAllAgents] = useState<Agent[]>([]);
@@ -52,11 +52,14 @@ export default function DiscoverAgentsPage() {
   return (
     <div className="space-y-8">
       <section className="text-center py-8 bg-gradient-to-r from-primary/10 via-background to-accent/10 rounded-xl shadow-sm">
+        <div className="inline-flex items-center justify-center mb-4">
+         <ShieldCheck className="h-16 w-16 text-primary" />
+        </div>
         <h1 className="text-4xl font-extrabold tracking-tight text-primary lg:text-5xl mb-4">
-          Discover AI Agents
+          Discover Verifiable AI Agents
         </h1>
-        <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
-          Explore and connect with a universe of AI agents. Securely find agents based on their capabilities and verified identities.
+        <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
+          Explore a tamper-evident, dual-trust registry for AI agents. Our NANDA+ANS architecture uses a decoupled, two-hop lookup model with signed pointers (AgentAddr) to cryptographically verifiable AgentFacts. Discover agents with assured capabilities through privacy-preserving techniques, building a resilient and trustworthy Internet of AI Agents.
         </p>
       </section>
 
@@ -117,4 +120,3 @@ const CardSkeleton = () => (
     <Skeleton className="h-10 w-full mt-2" />
   </div>
 );
-

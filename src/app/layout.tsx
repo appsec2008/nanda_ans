@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'AgentVerse Registry - NANDA+ANS',
-  description: 'A federated registry for secure, capability-aware AI agent discovery, based on the NANDA+ANS Security Blueprint.',
+  description: 'A federated registry for secure, capability-aware AI agent discovery, based on the NANDA+ANS Security Blueprint. Features a dual-trust foundation, decoupled lookup model, cryptographic assurance for agent capabilities, and privacy-preserving discovery for a resilient Internet of AI Agents.',
 };
 
 export default function RootLayout({

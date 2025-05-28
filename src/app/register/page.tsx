@@ -18,14 +18,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle }  from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { BotMessageSquare } from "lucide-react";
+import { BotMessageSquare, ShieldPlus } from "lucide-react";
 
 const agentRegistrationSchema = z.object({
   agentName: z.string().min(3, { message: "Agent name must be at least 3 characters." }),
-  agentDID: z.string().startsWith("did:", { message: "Must be a valid DID."}),
+  agentDID: z.string().startsWith("did:", { message: "Must be a valid DID (e.g., did:nanda:xyz or did:web:example.com)."}),
   capability: z.string().min(3, { message: "Primary capability is required." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }).max(500, { message: "Description must not exceed 500 characters."}),
-  factsUrl: z.string().url({ message: "Please enter a valid URL for AgentFacts." }),
+  factsUrl: z.string().url({ message: "Please enter a valid URL for AgentFacts (e.g., https://example.com/.well-known/agent-facts.jsonld)." }),
   providerName: z.string().optional(),
   version: z.string().optional(),
 });
@@ -55,6 +55,7 @@ export default function RegisterAgentPage() {
       description: (
         <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
           <p className="text-white">Agent {data.agentName} registration conceptually submitted.</p>
+          <p className="text-white text-xs mt-1">This would involve creating signed AgentAddr pointers to your AgentFacts, leveraging cryptographic assurance.</p>
           <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
             <code className="text-white text-xs">{JSON.stringify(data, null, 2)}</code>
           </pre>
@@ -70,11 +71,11 @@ export default function RegisterAgentPage() {
       <Card className="shadow-lg">
         <CardHeader className="text-center">
           <div className="inline-flex items-center justify-center mb-4">
-            <BotMessageSquare className="h-12 w-12 text-primary" />
+            <ShieldPlus className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Join the AgentVerse Registry by providing your agent's details.
+            Securely add your agent to the NANDA+ANS ecosystem. Provide details to establish its verifiable identity (CA-signed or DID-based) and cryptographically assured capabilities, contributing to a resilient Internet of AI Agents.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -103,7 +104,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input placeholder="did:nanda:your-agent-identifier" {...field} />
                     </FormControl>
-                    <FormDescription>The unique DID for your agent, e.g., did:nanda:xyz or did:web:example.com:agent.</FormDescription>
+                    <FormDescription>The unique DID for your agent, supporting CA-signed or self-sovereign identities (e.g., did:nanda:xyz, did:web:example.com).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -117,7 +118,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input placeholder="e.g., DataAnalysis, ImageGeneration" {...field} />
                     </FormControl>
-                    <FormDescription>The main function or service your agent provides.</FormDescription>
+                    <FormDescription>The main, verifiable function your agent provides.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -130,12 +131,12 @@ export default function RegisterAgentPage() {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe your agent's purpose, features, and how it operates."
+                        placeholder="Describe your agent's purpose, features, and how it operates. This will be part of its verifiable AgentFacts."
                         className="resize-y min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>A detailed description of your agent.</FormDescription>
+                    <FormDescription>A detailed description contributing to the agent's discoverable and verifiable AgentFacts.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -149,7 +150,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input type="url" placeholder="https://example.com/.well-known/agent-facts.jsonld" {...field} />
                     </FormControl>
-                    <FormDescription>The publicly accessible URL to your agent's AgentFacts JSON-LD document.</FormDescription>
+                    <FormDescription>The publicly accessible URL to your agent's cryptographically verifiable AgentFacts (JSON-LD).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
