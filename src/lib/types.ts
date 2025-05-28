@@ -1,11 +1,13 @@
 // src/lib/types.ts
 
 export interface AgentSignature {
-  type: string;
-  created: string;
-  verificationMethod: string;
-  proofPurpose: string;
-  proofValue: string;
+  type: string; // e.g., "RsaSignature2018", "EdDsaSAPublicKeySecp256k1"
+  created: string; // ISO date string for signature creation
+  verificationMethod: string; // DID URL of the public key (e.g., agentDID#key-1)
+  proofPurpose: string; // e.g., "assertionMethod", "capabilityDelegation"
+  proofValue: string; // The simulated signature value (long hex string)
+  simulatedIssuer?: string; // e.g., "NANDA+ANS Trusted CA G1"
+  simulatedPublicKey?: string; // e.g., "04:AB:CD:EF:12:34:56:78:90:..." (Hex representation of a public key)
 }
 
 export interface EndpointSet {

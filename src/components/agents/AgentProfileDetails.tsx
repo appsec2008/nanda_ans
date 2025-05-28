@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import AgentCapabilityIcon from '@/components/icons/AgentCapabilityIcon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock, Fingerprint, Link2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock, Fingerprint, Link2, KeyRound, Building } from 'lucide-react';
 
 interface AgentProfileDetailsProps {
   agent: Agent;
@@ -40,7 +40,7 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
                 </p>
               )}
               {agent.version && (
-                 <div className="text-sm text-muted-foreground mt-1"> {/* Changed p to div here */}
+                 <div className="text-sm text-muted-foreground mt-1">
                   Version: <Badge variant="secondary">{agent.version}</Badge>
                   {agent.extension && <Badge variant="outline" className="ml-2">{agent.extension}</Badge>}
                 </div>
@@ -85,7 +85,7 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
                         </p>
                     )}
                     <p className="text-xs text-muted-foreground pt-2">
-                      NANDA provides a lightweight, signed pointer (AgentAddr) including the DID, Facts URL, and TTL. This points to the detailed, cryptographically verifiable AgentFacts hosted on the Metadata Distribution Tier, structured according to ANS principles.
+                      NANDA provides a lightweight, signed pointer (AgentAddr) including the DID, Facts URL, and TTL. This points to the detailed, cryptographically verifiable AgentFacts hosted on the Metadata Distribution Tier, structured according to ANS principles. Agent identity and capability attestations are secured via PKI mechanisms, simulated here for demonstration.
                     </p>
                 </AccordionContent>
             </AccordionItem>
@@ -156,13 +156,22 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
             
             {agent.signature && (
               <AccordionItem value="item-signature">
-                <AccordionTrigger className="text-lg font-semibold"><Fingerprint className="mr-2 h-5 w-5 text-primary"/>Signature Details</AccordionTrigger>
-                <AccordionContent className="pt-2 space-y-1">
-                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Type:</strong> {agent.signature.type}</p>
-                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Created:</strong> {new Date(agent.signature.created).toLocaleString()}</p>
-                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Verification Method:</strong> {agent.signature.verificationMethod}</p>
-                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Proof Purpose:</strong> {agent.signature.proofPurpose}</p>
-                  <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground">Proof Value:</strong> {agent.signature.proofValue}</p>
+                <AccordionTrigger className="text-lg font-semibold"><Fingerprint className="mr-2 h-5 w-5 text-primary"/>Simulated Signature & PKI Details</AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-2">
+                  <p className="text-xs text-muted-foreground pb-2">
+                    This section demonstrates how an agent's information could be cryptographically signed within a PKI framework. In a real system, this signature would be verifiable against the agent's public key, which itself could be part of a certificate chain leading to a trusted NANDA+ANS CA.
+                  </p>
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground"><AlertCircle className="inline h-4 w-4 mr-1.5"/>Signature Type:</strong> {agent.signature.type}</p>
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground"><CalendarDays className="inline h-4 w-4 mr-1.5"/>Signed On:</strong> {new Date(agent.signature.created).toLocaleString()}</p>
+                  {agent.signature.simulatedIssuer && (
+                    <p className="text-sm text-foreground"><strong className="text-muted-foreground"><Building className="inline h-4 w-4 mr-1.5"/>Simulated Issuer (CA):</strong> {agent.signature.simulatedIssuer}</p>
+                  )}
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground"><ShieldQuestion className="inline h-4 w-4 mr-1.5"/>Verification Method (Key ID):</strong> {agent.signature.verificationMethod}</p>
+                   {agent.signature.simulatedPublicKey && (
+                    <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground"><KeyRound className="inline h-4 w-4 mr-1.5"/>Simulated Public Key:</strong> {agent.signature.simulatedPublicKey}</p>
+                  )}
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground"><CheckCircle2 className="inline h-4 w-4 mr-1.5"/>Proof Purpose:</strong> {agent.signature.proofPurpose}</p>
+                  <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground"><Fingerprint className="inline h-4 w-4 mr-1.5"/>Simulated Signature Value:</strong> {agent.signature.proofValue}</p>
                 </AccordionContent>
               </AccordionItem>
             )}

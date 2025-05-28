@@ -22,13 +22,26 @@ import { toast } from "@/hooks/use-toast";
 import { BotMessageSquare, ShieldPlus } from "lucide-react";
 // Firebase imports removed: import { db } from '@/lib/firebase';
 // Firestore functions removed: import { doc, setDoc } from 'firebase/firestore';
-import type { Agent } from '@/lib/types';
+import type { Agent, AgentSignature } from '@/lib/types';
+
+const generateMockSignature = (agentId: string): AgentSignature => {
+  const creationDate = new Date().toISOString();
+  return {
+    type: "RsaSignature2018", // PKI-relevant signature type
+    created: creationDate,
+    verificationMethod: `${agentId}#key-pki-1`, // Mock key identifier linked to the agent's DID
+    proofPurpose: "assertionMethod", // Purpose of the signature (e.g., agent asserts its identity/facts)
+    proofValue: Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''), // 64-byte hex string
+    simulatedIssuer: "NANDA+ANS Global CA G2", // Mock Certificate Authority
+    simulatedPublicKey: `04:${Array(64).fill(0).map(() => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':').toUpperCase()}`, // Mock public key in hex format
+  };
+};
 
 const realisticDefaults = {
   agentName: "My New AI Agent",
   agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // More unique default DID
   capability: "Generic AI Task",
-  description: "This is a newly registered AI agent. Its purpose is to perform general tasks and integrate within the NANDA+ANS ecosystem. Specific capabilities and details will be updated in its AgentFacts.",
+  description: "This is a newly registered AI agent. Its purpose is to perform general tasks and integrate within the NANDA+ANS ecosystem. Specific capabilities and details will be updated in its AgentFacts. This registration includes a simulated digital signature to demonstrate PKI concepts.",
   factsUrl: "https://example.com/.well-known/agent-facts-default.jsonld",
   providerName: "Independent Developer",
   version: "0.1.0-alpha",
@@ -38,7 +51,11 @@ const realisticDefaults = {
   avatarUrl: 'https://placehold.co/100x100.png',
   dataAiHint: 'agent avatar',
   addr_ttl: 3600,
+  signature: undefined as AgentSignature | undefined, // Will be populated in onSubmit or if defaults are used
 };
+// Initialize signature with a default mock signature based on the default DID
+realisticDefaults.signature = generateMockSignature(realisticDefaults.agentDID);
+
 
 const agentRegistrationSchema = z.object({
   agentName: z.string().min(3, { message: "Agent name must be at least 3 characters if provided." }).optional().or(z.literal("")),
@@ -59,7 +76,7 @@ type AgentRegistrationFormValues = z.infer<typeof agentRegistrationSchema>;
 export default function RegisterAgentPage() {
   const form = useForm<AgentRegistrationFormValues>({
     resolver: zodResolver(agentRegistrationSchema),
-    defaultValues: { // Pre-fill form with defaults
+    defaultValues: { 
       agentName: realisticDefaults.agentName,
       agentDID: realisticDefaults.agentDID,
       capability: realisticDefaults.capability,
@@ -69,50 +86,50 @@ export default function RegisterAgentPage() {
       version: realisticDefaults.version,
       ansName: realisticDefaults.ansName,
     },
-    mode: "onChange", // Validate on change for better UX
+    mode: "onChange",
   });
 
   async function onSubmit(data: AgentRegistrationFormValues) {
     const agentId = data.agentDID?.trim() || realisticDefaults.agentDID;
-
+    
     const agentToRegister: Agent = {
       id: agentId,
       name: data.agentName?.trim() || realisticDefaults.agentName,
-      ansName: data.ansName?.trim() || `${data.providerName?.trim() || realisticDefaults.providerName}.${data.capability?.trim() || realisticDefaults.capability}.${agentId.split(':').pop()}`.toLowerCase().replace(/\s+/g, ''), // Example ANS name
+      ansName: data.ansName?.trim() || `${data.providerName?.trim() || realisticDefaults.providerName}.${data.capability?.trim() || realisticDefaults.capability}.${agentId.split(':').pop()}`.toLowerCase().replace(/\s+/g, ''),
       capability: data.capability?.trim() || realisticDefaults.capability,
       capabilities: data.capability?.trim() ? [data.capability.trim()] : realisticDefaults.capabilities,
       provider: data.providerName?.trim() || realisticDefaults.providerName,
       version: data.version?.trim() || realisticDefaults.version,
       description: data.description?.trim() || realisticDefaults.description,
-      addr_facts_url: data.factsUrl?.trim() || realisticDefaults.factsUrl, // NANDA facts URL pointer
+      addr_facts_url: data.factsUrl?.trim() || realisticDefaults.factsUrl,
       attestations: realisticDefaults.attestations,
       avatarUrl: realisticDefaults.avatarUrl,
       dataAiHint: data.agentName?.trim() ? data.agentName.trim().toLowerCase().split(' ').slice(0,2).join(' ') : realisticDefaults.dataAiHint,
       registeredAt: new Date().toISOString(),
       addr_ttl: realisticDefaults.addr_ttl,
+      signature: generateMockSignature(agentId), // Always generate a new mock signature on submission
     };
 
     console.log("Agent data prepared for display (not saved to database):", JSON.stringify(agentToRegister, null, 2));
 
-    // Simulate registration by showing a toast with the data
     toast({
       title: "Agent Data Prepared (Demonstration)",
       description: (
         <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <p className="text-white">The following agent data has been prepared based on your input and defaults. In a live system, this would be registered to the database.</p>
+          <p className="text-white">The following agent data has been prepared based on your input and defaults. This includes simulated signature data for PKI demonstration. In a live system, this would be registered to the database.</p>
           <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
             <code className="text-white text-xs">{JSON.stringify(agentToRegister, null, 2)}</code>
           </pre>
         </div>
       ),
       variant: "default",
-      duration: 10000, // Keep toast longer for demonstration
+      duration: 10000, 
     });
 
-    // Reset form with new unique DID for next conceptual registration
+    const newDefaultDID = `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     form.reset({
       ...realisticDefaults,
-      agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // New unique default DID
+      agentDID: newDefaultDID,
       agentName: realisticDefaults.agentName,
       capability: realisticDefaults.capability,
       description: realisticDefaults.description,
@@ -120,9 +137,9 @@ export default function RegisterAgentPage() {
       providerName: realisticDefaults.providerName,
       version: realisticDefaults.version,
       ansName: "",
+      // The signature in realisticDefaults itself doesn't need to be updated here,
+      // as a new one is generated on each submission.
     });
-
-    // No catch block needed for Firestore errors anymore
   }
 
   return (
@@ -134,7 +151,7 @@ export default function RegisterAgentPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer stored in Firestore) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities. (Currently, this form only demonstrates data preparation and does not save to a database).
+            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity and demonstrates cryptographically assured capabilities through simulated digital signatures. (Currently, this form only demonstrates data preparation and does not save to a database).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,5 +285,3 @@ export default function RegisterAgentPage() {
     </div>
   );
 }
-
-    

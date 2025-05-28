@@ -1,8 +1,21 @@
 
 // src/lib/agent-service.ts
-import type { Agent } from '@/lib/types';
+import type { Agent, AgentSignature } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, getDoc, writeBatch } from 'firebase/firestore';
+
+const generateMockSignatureForAgent = (agentId: string, createdDate?: string, issuer?: string, type?: string): AgentSignature => {
+  const creationDate = createdDate || new Date().toISOString();
+  return {
+    type: type || "RsaSignature2018",
+    created: creationDate,
+    verificationMethod: `${agentId}#key-pki-1`,
+    proofPurpose: "assertionMethod",
+    proofValue: Array(128).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''), // Longer mock signature
+    simulatedIssuer: issuer || "NANDA+ANS Trusted CA G1",
+    simulatedPublicKey: `04:${Array(64).fill(0).map(() => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join(':').toUpperCase()}`,
+  };
+};
 
 // The mockAgents array can be kept for fallback or initial seeding.
 export const mockAgents: Agent[] = [
@@ -15,7 +28,7 @@ export const mockAgents: Agent[] = [
     provider: 'PolyglotAI',
     version: '2.1',
     extension: 'certified',
-    description: 'Advanced AI for translating documents in over 100 languages with high accuracy and context preservation. Supports various file formats and offers secure processing.',
+    description: 'Advanced AI for translating documents in over 100 languages with high accuracy and context preservation. Supports various file formats and offers secure processing. Includes simulated PKI signature for trust demonstration.',
     endpoints: {
       "@type": "nanda:EndpointSet",
       static_endpoint: ["https://api.polyglotai.com/translate/v2.1"],
@@ -31,7 +44,8 @@ export const mockAgents: Agent[] = [
     dataAiHint: 'robot language',
     registeredAt: new Date(2024, 0, 15).toISOString(), // Jan 15, 2024
     addr_ttl: 3600,
-    addr_facts_url: "https://polyglotai.com/.well-known/agent-facts-linguabot.jsonld"
+    addr_facts_url: "https://polyglotai.com/.well-known/agent-facts-linguabot.jsonld",
+    signature: generateMockSignatureForAgent('did:nanda:agent-translator-001', new Date(2024, 0, 14).toISOString(), "PolyglotAI CA")
   },
   {
     id: 'did:nanda:agent-dataprotector-002',
@@ -42,7 +56,7 @@ export const mockAgents: Agent[] = [
     provider: 'SecureDataCorp',
     version: '1.0',
     extension: 'enterprise',
-    description: 'Enterprise-grade data anonymization agent ensuring GDPR and CCPA compliance. Uses advanced techniques to protect sensitive information while preserving data utility.',
+    description: 'Enterprise-grade data anonymization agent ensuring GDPR and CCPA compliance. Uses advanced techniques to protect sensitive information while preserving data utility. Includes simulated PKI signature for trust demonstration.',
     endpoints: {
       "@type": "nanda:EndpointSet",
       static_endpoint: ["https://api.securedatacorp.com/anonymize/v1.0"]
@@ -56,7 +70,8 @@ export const mockAgents: Agent[] = [
     dataAiHint: 'shield security',
     registeredAt: new Date(2023, 10, 20).toISOString(), // Nov 20, 2023
     addr_ttl: 7200,
-    addr_facts_url: "https://securedatacorp.com/.well-known/agent-facts-guardian.jsonld"
+    addr_facts_url: "https://securedatacorp.com/.well-known/agent-facts-guardian.jsonld",
+    signature: generateMockSignatureForAgent('did:nanda:agent-dataprotector-002', new Date(2023, 10, 19).toISOString(), "SecureDataCorp CA", "EcdsaSecp256k1Signature2019")
   },
   {
     id: 'did:nanda:agent-artcreator-003',
@@ -67,7 +82,7 @@ export const mockAgents: Agent[] = [
     provider: 'ArtifyInc',
     version: '3.0',
     extension: 'beta',
-    description: 'A creative AI agent that generates stunning and unique images from textual descriptions. Explore various artistic styles and resolutions.',
+    description: 'A creative AI agent that generates stunning and unique images from textual descriptions. Explore various artistic styles and resolutions. Includes simulated PKI signature for trust demonstration.',
     endpoints: {
       "@type": "nanda:EndpointSet",
       static_endpoint: ["https://api.artifyinc.com/imagegen/v3"],
@@ -82,7 +97,8 @@ export const mockAgents: Agent[] = [
     dataAiHint: 'abstract art',
     registeredAt: new Date(2024, 2, 1).toISOString(), // Mar 1, 2024
     addr_ttl: 1800,
-    addr_facts_url: "https://artifyinc.com/.well-known/agent-facts-pixel.jsonld"
+    addr_facts_url: "https://artifyinc.com/.well-known/agent-facts-pixel.jsonld",
+    signature: generateMockSignatureForAgent('did:nanda:agent-artcreator-003', new Date(2024, 1, 28).toISOString(), "ArtifyInc CA")
   },
   {
     id: 'did:nanda:agent-codehelper-004',
@@ -92,7 +108,7 @@ export const mockAgents: Agent[] = [
     capabilities: ['Code Generation', 'Debugging Assistance', 'API Documentation Lookup'],
     provider: 'CodeGenius',
     version: '1.5',
-    description: 'An AI assistant for developers, providing code snippets, debugging help, and quick access to API documentation. Supports Python, JavaScript, and Java.',
+    description: 'An AI assistant for developers, providing code snippets, debugging help, and quick access to API documentation. Supports Python, JavaScript, and Java. Includes simulated PKI signature for trust demonstration.',
     endpoints: {
       "@type": "nanda:EndpointSet",
       static_endpoint: ["https://api.codegenius.com/devmentor/v1.5"]
@@ -106,7 +122,8 @@ export const mockAgents: Agent[] = [
     dataAiHint: 'code computer',
     registeredAt: new Date(2024, 1, 10).toISOString(), // Feb 10, 2024
     addr_ttl: 3600,
-    addr_facts_url: "https://codegenius.com/.well-known/agent-facts-devmentor.jsonld"
+    addr_facts_url: "https://codegenius.com/.well-known/agent-facts-devmentor.jsonld",
+    signature: generateMockSignatureForAgent('did:nanda:agent-codehelper-004', new Date(2024, 1, 9).toISOString(), "CodeGenius Community CA")
   },
   {
     id: 'did:nanda:agent-dbquery-005',
@@ -117,7 +134,7 @@ export const mockAgents: Agent[] = [
     provider: 'QueryWorks Inc.',
     version: '1.2',
     extension: 'trusted',
-    description: 'A powerful AI agent for securely querying various types of databases and retrieving structured data. Supports natural language queries and returns results in multiple formats.',
+    description: 'A powerful AI agent for securely querying various types of databases and retrieving structured data. Supports natural language queries and returns results in multiple formats. Includes simulated PKI signature for trust demonstration.',
     endpoints: {
       "@type": "nanda:EndpointSet",
       static_endpoint: ["https://api.queryworks.com/query/v1.2"],
@@ -132,7 +149,8 @@ export const mockAgents: Agent[] = [
     dataAiHint: 'database tech',
     registeredAt: new Date(2023, 8, 5).toISOString(), // Sep 5, 2023
     addr_ttl: 3000,
-    addr_facts_url: "https://queryworks.com/.well-known/agent-facts-dataoracle.jsonld"
+    addr_facts_url: "https://queryworks.com/.well-known/agent-facts-dataoracle.jsonld",
+    signature: generateMockSignatureForAgent('did:nanda:agent-dbquery-005', new Date(2023, 8, 4).toISOString(), "QueryWorks Trusted CA", "JsonWebSignature2020")
   }
 ];
 
@@ -181,20 +199,30 @@ export const getAllAgents = async (): Promise<Agent[]> => {
         const agentSnapshot = await getDocs(agentsCollectionRef);
         agentsListFromFirestore = agentSnapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as Agent));
 
-        // Seeding logic (only if Firestore is completely empty)
+        // Seeding logic (only if Firestore is completely empty and mockAgents has items)
         if (agentsListFromFirestore.length === 0 && mockAgents.length > 0) {
             console.log("No agents found in Firestore. Seeding database with mock data...");
             const batch = writeBatch(db);
             mockAgents.forEach(agent => {
                 const agentRef = doc(db, "agents", agent.id);
                 // Ensure all fields are defined, especially registeredAt which might be generated
-                const agentData = { ...agent, registeredAt: agent.registeredAt || new Date().toISOString() };
+                // And ensure signature is part of the seeded data
+                const agentData = { 
+                  ...agent, 
+                  registeredAt: agent.registeredAt || new Date().toISOString(),
+                  signature: agent.signature || generateMockSignatureForAgent(agent.id, agent.registeredAt) 
+                };
                 batch.set(agentRef, agentData);
             });
             await batch.commit();
             console.log("Mock data seeded successfully to Firestore.");
             // After seeding, Firestore now contains the mockAgents.
-            agentsListFromFirestore = [...mockAgents]; 
+            // It's important to reflect this in the data returned by this operation.
+            agentsListFromFirestore = mockAgents.map(agent => ({
+                ...agent,
+                registeredAt: agent.registeredAt || new Date().toISOString(),
+                signature: agent.signature || generateMockSignatureForAgent(agent.id, agent.registeredAt)
+            }));
         }
     } catch (dbError) {
         console.error("Error fetching or seeding agents from Firestore:", dbError);
@@ -202,15 +230,22 @@ export const getAllAgents = async (): Promise<Agent[]> => {
         // The merge logic below will handle this gracefully.
     }
     
-    // Combine mockAgents with unique agents from Firestore
-    // Start with a deep copy of mockAgents to prevent accidental mutation if objects are complex.
+    // Start with a deep copy of mockAgents to ensure all hardcoded agents are present.
     const combinedAgents = mockAgents.map(agent => ({...agent})); 
     const mockAgentIds = new Set(mockAgents.map(agent => agent.id));
 
     // Add agents from Firestore that are not already in mockAgents (based on ID)
+    // This ensures that if Firestore has additional agents, they are included.
     agentsListFromFirestore.forEach(dbAgent => {
         if (!mockAgentIds.has(dbAgent.id)) {
             combinedAgents.push({...dbAgent});
+        } else {
+            // If agent from DB is also in mock, ensure the DB version (potentially more up-to-date) is used
+            // or merge them. For simplicity, we can prioritize the DB version if it exists for a mock ID.
+            // However, current logic prioritizes mock data and only adds *new* from DB.
+            // To ensure DB data for existing mock IDs can be shown, we might need to update existing ones.
+            // For now, let's keep it simple: mockAgents are the base, unique DB agents are added.
+            // If a mockAgent was updated in DB, this logic doesn't automatically reflect it unless mock is removed.
         }
     });
 
