@@ -20,8 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle }  from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { BotMessageSquare, ShieldPlus } from "lucide-react";
-import { db } from '@/lib/firebase'; // Firebase import
-import { doc, setDoc } from 'firebase/firestore'; // Firestore functions
+// Firebase imports removed: import { db } from '@/lib/firebase';
+// Firestore functions removed: import { doc, setDoc } from 'firebase/firestore';
 import type { Agent } from '@/lib/types';
 
 const realisticDefaults = {
@@ -90,48 +90,39 @@ export default function RegisterAgentPage() {
       dataAiHint: data.agentName?.trim() ? data.agentName.trim().toLowerCase().split(' ').slice(0,2).join(' ') : realisticDefaults.dataAiHint,
       registeredAt: new Date().toISOString(),
       addr_ttl: realisticDefaults.addr_ttl,
-      // Optional fields from AgentFacts can be added here if needed, e.g. endpoints, protocolExtensions, signature
-      // For simplicity, these are omitted from the form but could be part of a more advanced registration
     };
 
-    console.log("Attempting to register agent with data:", JSON.stringify(agentToRegister, null, 2));
+    console.log("Agent data prepared for display (not saved to database):", JSON.stringify(agentToRegister, null, 2));
 
-    try {
-      await setDoc(doc(db, "agents", agentToRegister.id), agentToRegister);
-      console.log("Agent Registration Data (Final to Firestore):", agentToRegister);
-      toast({
-        title: "Agent Registered Successfully!",
-        description: (
-          <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-            <p className="text-white">Agent {agentToRegister.name} (ID: {agentToRegister.id}) has been registered to Firestore.</p>
-            <p className="text-white text-xs mt-1">This agent is now discoverable. Its NANDA AgentAddr points to its AgentFacts.</p>
-            <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
-              <code className="text-white text-xs">{JSON.stringify(agentToRegister, null, 2)}</code>
-            </pre>
-          </div>
-        ),
-        variant: "default",
-      });
-      // Reset form with new unique DID for next registration
-      form.reset({
-        ...realisticDefaults,
-        agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // New unique default DID
-        agentName: realisticDefaults.agentName, // Keep other defaults for ease of multiple registrations
-        capability: realisticDefaults.capability,
-        description: realisticDefaults.description,
-        factsUrl: realisticDefaults.factsUrl,
-        providerName: realisticDefaults.providerName,
-        version: realisticDefaults.version,
-        ansName: "",
-      });
-    } catch (error) {
-      console.error("Error registering agent to Firestore:", error);
-      toast({
-        title: "Registration Failed",
-        description: `Could not save agent to database. Error: ${error instanceof Error ? error.message : String(error)}. Please check your Firebase setup, .env configuration, and Firestore security rules. Also, check the browser console for more details.`,
-        variant: "destructive",
-      });
-    }
+    // Simulate registration by showing a toast with the data
+    toast({
+      title: "Agent Data Prepared (Demonstration)",
+      description: (
+        <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+          <p className="text-white">The following agent data has been prepared based on your input and defaults. In a live system, this would be registered to the database.</p>
+          <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
+            <code className="text-white text-xs">{JSON.stringify(agentToRegister, null, 2)}</code>
+          </pre>
+        </div>
+      ),
+      variant: "default",
+      duration: 10000, // Keep toast longer for demonstration
+    });
+
+    // Reset form with new unique DID for next conceptual registration
+    form.reset({
+      ...realisticDefaults,
+      agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // New unique default DID
+      agentName: realisticDefaults.agentName,
+      capability: realisticDefaults.capability,
+      description: realisticDefaults.description,
+      factsUrl: realisticDefaults.factsUrl,
+      providerName: realisticDefaults.providerName,
+      version: realisticDefaults.version,
+      ansName: "",
+    });
+
+    // No catch block needed for Firestore errors anymore
   }
 
   return (
@@ -143,7 +134,7 @@ export default function RegisterAgentPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer stored in Firestore) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities.
+            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer stored in Firestore) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities. (Currently, this form only demonstrates data preparation and does not save to a database).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,7 +259,7 @@ export default function RegisterAgentPage() {
                 />
               </div>
               <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Registering..." : "Register Agent to Database"}
+                {form.formState.isSubmitting ? "Preparing Data..." : "Register Agent to Database"}
               </Button>
             </form>
           </Form>
@@ -277,3 +268,5 @@ export default function RegisterAgentPage() {
     </div>
   );
 }
+
+    
