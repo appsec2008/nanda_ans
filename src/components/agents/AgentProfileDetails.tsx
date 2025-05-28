@@ -1,0 +1,161 @@
+// src/components/agents/AgentProfileDetails.tsx
+import type { Agent } from '@/lib/types';
+import Image from 'next/image';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import AgentCapabilityIcon from '@/components/icons/AgentCapabilityIcon';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock } from 'lucide-react';
+
+interface AgentProfileDetailsProps {
+  agent: Agent;
+  aiSummary: string | null; // Pass AI summary as prop
+}
+
+const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => {
+  return (
+    <div className="space-y-6">
+      <Card className="overflow-hidden shadow-lg">
+        <CardHeader className="bg-gradient-to-br from-primary/20 via-background to-accent/10 p-6">
+          <div className="flex flex-col md:flex-row items-start gap-6">
+            {agent.avatarUrl && (
+              <Image
+                src={agent.avatarUrl}
+                alt={`${agent.name} avatar`}
+                width={128}
+                height={128}
+                className="rounded-xl border-4 border-background shadow-md"
+                data-ai-hint={agent.dataAiHint || "agent avatar"}
+              />
+            )}
+            <div className="flex-1">
+              <CardTitle className="text-3xl font-bold text-primary mb-1">{agent.name}</CardTitle>
+              <CardDescription className="text-lg text-muted-foreground flex items-center">
+                <AgentCapabilityIcon capability={agent.capability} className="w-5 h-5 mr-2 text-accent" />
+                {agent.capability}
+              </CardDescription>
+              {agent.provider && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Provider: <span className="font-semibold text-foreground">{agent.provider}</span>
+                </p>
+              )}
+              {agent.version && (
+                 <p className="text-sm text-muted-foreground mt-1">
+                  Version: <Badge variant="secondary">{agent.version}</Badge>
+                  {agent.extension && <Badge variant="outline" className="ml-2">{agent.extension}</Badge>}
+                </p>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6 space-y-6">
+          {aiSummary && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center"><Info className="mr-2 h-5 w-5 text-primary"/>AI Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base text-foreground">{aiSummary}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {agent.description && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-foreground whitespace-pre-wrap">{agent.description}</p>
+              </CardContent>
+            </Card>
+          )}
+          
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="text-lg font-semibold"><Layers3 className="mr-2 h-5 w-5 text-primary"/>Capabilities</AccordionTrigger>
+              <AccordionContent className="pt-2">
+                {agent.capabilities && agent.capabilities.length > 0 ? (
+                  <ul className="list-disc list-inside space-y-1 pl-2">
+                    {agent.capabilities.map((cap, index) => (
+                      <li key={index} className="text-foreground flex items-center">
+                        <AgentCapabilityIcon capability={cap} className="w-4 h-4 mr-2 text-muted-foreground" /> {cap}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No detailed capabilities listed.</p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+
+            {agent.endpoints && (
+            <AccordionItem value="item-2">
+              <AccordionTrigger className="text-lg font-semibold"><PlugZap className="mr-2 h-5 w-5 text-primary"/>Endpoints</AccordionTrigger>
+              <AccordionContent className="pt-2 space-y-2">
+                {agent.endpoints.static_endpoint?.map((ep, i) => (
+                  <p key={`static-${i}`} className="text-sm text-foreground break-all">
+                    <strong className="text-muted-foreground">Static:</strong> {ep}
+                  </p>
+                ))}
+                {agent.endpoints.adaptive_router_url && (
+                  <p className="text-sm text-foreground break-all">
+                    <strong className="text-muted-foreground">Adaptive Router:</strong> {agent.endpoints.adaptive_router_url}
+                  </p>
+                )}
+              </AccordionContent>
+            </AccordionItem>
+            )}
+            
+            {agent.attestations && agent.attestations.length > 0 && (
+              <AccordionItem value="item-3">
+                <AccordionTrigger className="text-lg font-semibold"><CheckCircle2 className="mr-2 h-5 w-5 text-green-600"/>Attestations</AccordionTrigger>
+                <AccordionContent className="pt-2">
+                  <ul className="list-disc list-inside space-y-1 pl-2">
+                    {agent.attestations.map((att, index) => (
+                      <li key={index} className="text-foreground text-sm break-all">{att}</li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {agent.protocolExtensions && Object.keys(agent.protocolExtensions).filter(k => k !== "@type").length > 0 && (
+              <AccordionItem value="item-4">
+                <AccordionTrigger className="text-lg font-semibold"><GitBranch className="mr-2 h-5 w-5 text-primary"/>Protocol Extensions</AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-3">
+                  {Object.entries(agent.protocolExtensions)
+                    .filter(([key]) => key !== "@type")
+                    .map(([protocol, ext]) => (
+                    <div key={protocol} className="p-3 border rounded-md bg-background/50">
+                      <h4 className="font-semibold text-foreground uppercase">{protocol} ({ext.name || 'Details'})</h4>
+                      {ext.details && <pre className="mt-1 text-xs bg-muted/50 p-2 rounded-md overflow-x-auto">{JSON.stringify(ext.details, null, 2)}</pre>}
+                    </div>
+                  ))}
+                </AccordionContent>
+              </AccordionItem>
+            )}
+            
+            <AccordionItem value="item-5">
+                <AccordionTrigger className="text-lg font-semibold"><ShieldQuestion className="mr-2 h-5 w-5 text-primary"/>Registry Info (ANS/NANDA)</AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-1">
+                    {agent.ansName && <p className="text-sm text-foreground"><Tag className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>ANS Name:</strong> {agent.ansName}</p>}
+                    <p className="text-sm text-foreground"><Globe className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>Agent DID:</strong> {agent.id}</p>
+                    {agent.addr_facts_url && <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground">Facts URL:</strong> {agent.addr_facts_url}</p>}
+                    {agent.addr_ttl && <p className="text-sm text-foreground"><Clock className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>Addr TTL:</strong> {agent.addr_ttl} seconds</p>}
+                    {agent.registeredAt && (
+                        <p className="text-sm text-foreground"><CalendarDays className="inline h-4 w-4 mr-1.5 text-muted-foreground"/>
+                        <strong>Registered:</strong> {new Date(agent.registeredAt).toLocaleString()}
+                        </p>
+                    )}
+                </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AgentProfileDetails;
