@@ -17,7 +17,10 @@ interface AgentProfilePageProps {
 }
 
 export async function generateMetadata({ params }: AgentProfilePageProps) {
-  const agent = await getAgentById(params.id);
+  // DIDs can contain characters like ':', which might be URL-encoded in path segments.
+  // Ensure the ID is decoded before using it for lookup.
+  const decodedId = decodeURIComponent(params.id);
+  const agent = await getAgentById(decodedId);
   if (!agent) {
     return {
       title: 'Agent Not Found',
@@ -30,7 +33,10 @@ export async function generateMetadata({ params }: AgentProfilePageProps) {
 }
 
 export default async function AgentProfilePage({ params }: AgentProfilePageProps) {
-  const agent = await getAgentById(params.id);
+  // DIDs can contain characters like ':', which might be URL-encoded in path segments.
+  // Ensure the ID is decoded before using it for lookup.
+  const decodedId = decodeURIComponent(params.id);
+  const agent = await getAgentById(decodedId);
 
   if (!agent) {
     notFound();
