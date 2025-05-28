@@ -20,14 +20,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle }  from "@/co
 import { toast } from "@/hooks/use-toast";
 import { BotMessageSquare, ShieldPlus } from "lucide-react";
 
+const realisticDefaults = {
+  agentName: "My New AI Agent",
+  agentDID: "did:nanda:new-agent-placeholder-123",
+  capability: "Generic AI Task",
+  description: "This is a newly registered AI agent. Its purpose is to perform general tasks and integrate within the NANDA+ANS ecosystem. Specific capabilities and details will be updated in its AgentFacts.",
+  factsUrl: "https://example.com/.well-known/agent-facts-default.jsonld",
+  providerName: "Independent Developer",
+  version: "0.1.0-alpha",
+};
+
 const agentRegistrationSchema = z.object({
-  agentName: z.string().min(3, { message: "Agent name must be at least 3 characters." }),
-  agentDID: z.string().startsWith("did:", { message: "Must be a valid DID (e.g., did:nanda:xyz or did:web:example.com)."}),
-  capability: z.string().min(3, { message: "Primary capability is required." }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters." }).max(500, { message: "Description must not exceed 500 characters."}),
-  factsUrl: z.string().url({ message: "Please enter a valid URL for AgentFacts (e.g., https://example.com/.well-known/agent-facts.jsonld)." }),
-  providerName: z.string().optional(),
-  version: z.string().optional(),
+  agentName: z.string().min(3, { message: "Agent name must be at least 3 characters if provided." }).optional().or(z.literal("")),
+  agentDID: z.string().startsWith("did:", { message: "Must be a valid DID (e.g., did:nanda:xyz) if provided." }).optional().or(z.literal("")),
+  capability: z.string().min(3, { message: "Primary capability must be at least 3 characters if provided." }).optional().or(z.literal("")),
+  description: z.string()
+    .min(10, { message: "Description must be at least 10 characters if provided." })
+    .max(500, { message: "Description must not exceed 500 characters if provided." })
+    .optional().or(z.literal("")),
+  factsUrl: z.string().url({ message: "Please enter a valid URL for AgentFacts if provided." }).optional().or(z.literal("")),
+  providerName: z.string().optional().or(z.literal("")),
+  version: z.string().optional().or(z.literal("")),
 });
 
 type AgentRegistrationFormValues = z.infer<typeof agentRegistrationSchema>;
@@ -35,35 +48,36 @@ type AgentRegistrationFormValues = z.infer<typeof agentRegistrationSchema>;
 export default function RegisterAgentPage() {
   const form = useForm<AgentRegistrationFormValues>({
     resolver: zodResolver(agentRegistrationSchema),
-    defaultValues: {
-      agentName: "",
-      agentDID: "did:nanda:",
-      capability: "",
-      description: "",
-      factsUrl: "https://example.com/.well-known/agent-facts.jsonld",
-      providerName: "",
-      version: "1.0",
-    },
+    defaultValues: realisticDefaults,
   });
 
   function onSubmit(data: AgentRegistrationFormValues) {
-    // This is a conceptual submission.
-    // In a real app, this would interact with the NANDA+ANS backend.
-    console.log("Agent Registration Data:", data);
+    // Use realistic defaults for any fields left empty by the user
+    const finalData = {
+      agentName: data.agentName?.trim() || realisticDefaults.agentName,
+      agentDID: data.agentDID?.trim() || realisticDefaults.agentDID,
+      capability: data.capability?.trim() || realisticDefaults.capability,
+      description: data.description?.trim() || realisticDefaults.description,
+      factsUrl: data.factsUrl?.trim() || realisticDefaults.factsUrl,
+      providerName: data.providerName?.trim() || realisticDefaults.providerName,
+      version: data.version?.trim() || realisticDefaults.version,
+    };
+
+    console.log("Agent Registration Data (Final):", finalData);
     toast({
       title: "Registration Submitted (Conceptual)",
       description: (
         <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <p className="text-white">Agent {data.agentName} registration submitted.</p>
-          <p className="text-white text-xs mt-1">This process would typically create a NANDA AgentAddr (a signed pointer including DID, Facts URL, TTL) to your AgentFacts, secured within the NANDA+ANS dual-trust framework.</p>
+          <p className="text-white">Agent {finalData.agentName} registration submitted.</p>
+          <p className="text-white text-xs mt-1">This process would typically create a NANDA AgentAddr (a signed pointer including DID, Facts URL, TTL) to your AgentFacts, secured within the NANDA+ANS dual-trust framework using default or provided values.</p>
           <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
-            <code className="text-white text-xs">{JSON.stringify(data, null, 2)}</code>
+            <code className="text-white text-xs">{JSON.stringify(finalData, null, 2)}</code>
           </pre>
         </div>
       ),
       variant: "default",
     });
-    // form.reset(); // Optionally reset form
+    // form.reset(realisticDefaults); // Optionally reset form to defaults after submission
   }
 
   return (
@@ -75,7 +89,7 @@ export default function RegisterAgentPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer) that directs to your detailed `AgentFacts` (verifiable metadata). This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities, contributing to a resilient Internet of AI Agents.
+            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -88,9 +102,9 @@ export default function RegisterAgentPage() {
                   <FormItem>
                     <FormLabel>Agent Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., MyAwesomeAgent" {...field} />
+                      <Input placeholder={realisticDefaults.agentName} {...field} />
                     </FormControl>
-                    <FormDescription>A user-friendly name for your agent.</FormDescription>
+                    <FormDescription>A user-friendly name for your agent. (Optional, defaults will be used if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -102,9 +116,9 @@ export default function RegisterAgentPage() {
                   <FormItem>
                     <FormLabel>Agent DID (Decentralized Identifier)</FormLabel>
                     <FormControl>
-                      <Input placeholder="did:nanda:your-agent-identifier" {...field} />
+                      <Input placeholder={realisticDefaults.agentDID} {...field} />
                     </FormControl>
-                    <FormDescription>The agent's unique Decentralized Identifier (DID), serving as its NANDA root identity (e.g., did:nanda:xyz, did:web:example.com).</FormDescription>
+                    <FormDescription>The agent's unique DID, its NANDA root identity. (Optional, defaults will be used if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -116,9 +130,9 @@ export default function RegisterAgentPage() {
                   <FormItem>
                     <FormLabel>Primary Capability</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., DataAnalysis, ImageGeneration" {...field} />
+                      <Input placeholder={realisticDefaults.capability} {...field} />
                     </FormControl>
-                    <FormDescription>The main, verifiable function your agent provides. This often forms part of its ANS Name.</FormDescription>
+                    <FormDescription>The main function your agent provides. (Optional, defaults will be used if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -131,12 +145,12 @@ export default function RegisterAgentPage() {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe your agent's purpose, features, and how it operates. This will be part of its verifiable AgentFacts."
+                        placeholder={realisticDefaults.description}
                         className="resize-y min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>A detailed description contributing to the agent's discoverable and verifiable AgentFacts (ANS metadata).</FormDescription>
+                    <FormDescription>Detailed description for AgentFacts. (Optional, defaults will be used if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -148,9 +162,9 @@ export default function RegisterAgentPage() {
                   <FormItem>
                     <FormLabel>AgentFacts URL</FormLabel>
                     <FormControl>
-                      <Input type="url" placeholder="https://example.com/.well-known/agent-facts.jsonld" {...field} />
+                      <Input type="url" placeholder={realisticDefaults.factsUrl} {...field} />
                     </FormControl>
-                    <FormDescription>The publicly accessible URL to your agent's cryptographically verifiable AgentFacts (JSON-LD). The NANDA registry will create a signed pointer (AgentAddr) to this URL.</FormDescription>
+                    <FormDescription>Publicly accessible URL to your AgentFacts (JSON-LD). (Optional, defaults will be used if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -161,10 +175,11 @@ export default function RegisterAgentPage() {
                   name="providerName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Provider Name (Optional)</FormLabel>
+                      <FormLabel>Provider Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., MyCompany AI" {...field} />
+                        <Input placeholder={realisticDefaults.providerName} {...field} />
                       </FormControl>
+                      <FormDescription>(Optional)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -174,10 +189,11 @@ export default function RegisterAgentPage() {
                   name="version"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Version (Optional)</FormLabel>
+                      <FormLabel>Version</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., 1.0.0" {...field} />
+                        <Input placeholder={realisticDefaults.version} {...field} />
                       </FormControl>
+                      <FormDescription>(Optional)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
