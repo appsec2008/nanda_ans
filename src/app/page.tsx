@@ -59,7 +59,7 @@ export default function DiscoverAgentsPage() {
           Discover Verifiable AI Agents
         </h1>
         <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
-          Explore a tamper-evident, dual-trust registry for AI agents. Our NANDA+ANS architecture uses a decoupled, two-hop lookup model with signed pointers (AgentAddr) to cryptographically verifiable AgentFacts. Discover agents with assured capabilities through privacy-preserving techniques, building a resilient and trustworthy Internet of AI Agents.
+          Explore a tamper-evident, dual-trust registry for AI agents. Our NANDA+ANS architecture uses a decoupled, two-hop lookup model: the core NANDA Registry (Anchor Tier) provides lightweight, signed pointers (AgentAddr) to detailed, cryptographically verifiable AgentFacts (Metadata Distribution Tier, structured by ANS principles). Discover agents with assured capabilities through privacy-preserving techniques, building a resilient and trustworthy Internet of AI Agents.
         </p>
       </section>
 

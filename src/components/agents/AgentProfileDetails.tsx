@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import AgentCapabilityIcon from '@/components/icons/AgentCapabilityIcon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock, Fingerprint } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock, Fingerprint, Link2 } from 'lucide-react';
 
 interface AgentProfileDetailsProps {
   agent: Agent;
@@ -71,8 +71,26 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
             </Card>
           )}
           
-          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-            <AccordionItem value="item-1">
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-ans-nanda">
+            <AccordionItem value="item-ans-nanda">
+                <AccordionTrigger className="text-lg font-semibold"><ShieldQuestion className="mr-2 h-5 w-5 text-primary"/>NANDA+ANS Registry Details</AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-1">
+                    <p className="text-sm text-foreground"><Globe className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>Agent DID (NANDA Identifier):</strong> {agent.id}</p>
+                    {agent.ansName && <p className="text-sm text-foreground"><Tag className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>ANS Name (Capability Address):</strong> {agent.ansName}</p>}
+                    {agent.addr_facts_url && <p className="text-sm text-foreground break-all"><Link2 className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>NANDA Facts URL Pointer:</strong> {agent.addr_facts_url}</p>}
+                    {agent.addr_ttl && <p className="text-sm text-foreground"><Clock className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>NANDA Pointer TTL:</strong> {agent.addr_ttl} seconds</p>}
+                    {agent.registeredAt && (
+                        <p className="text-sm text-foreground"><CalendarDays className="inline h-4 w-4 mr-1.5 text-muted-foreground"/>
+                        <strong>Registered:</strong> {new Date(agent.registeredAt).toLocaleString()}
+                        </p>
+                    )}
+                    <p className="text-xs text-muted-foreground pt-2">
+                      NANDA provides a lightweight, signed pointer (AgentAddr) including the DID, Facts URL, and TTL. This points to the detailed, cryptographically verifiable AgentFacts hosted on the Metadata Distribution Tier, structured according to ANS principles.
+                    </p>
+                </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-capabilities">
               <AccordionTrigger className="text-lg font-semibold"><Layers3 className="mr-2 h-5 w-5 text-primary"/>Capabilities</AccordionTrigger>
               <AccordionContent className="pt-2">
                 {agent.capabilities && agent.capabilities.length > 0 ? (
@@ -90,7 +108,7 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
             </AccordionItem>
 
             {agent.endpoints && (
-            <AccordionItem value="item-2">
+            <AccordionItem value="item-endpoints">
               <AccordionTrigger className="text-lg font-semibold"><PlugZap className="mr-2 h-5 w-5 text-primary"/>Endpoints</AccordionTrigger>
               <AccordionContent className="pt-2 space-y-2">
                 {agent.endpoints.static_endpoint?.map((ep, i) => (
@@ -108,7 +126,7 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
             )}
             
             {agent.attestations && agent.attestations.length > 0 && (
-              <AccordionItem value="item-3">
+              <AccordionItem value="item-attestations">
                 <AccordionTrigger className="text-lg font-semibold"><CheckCircle2 className="mr-2 h-5 w-5 text-green-600"/>Attestations</AccordionTrigger>
                 <AccordionContent className="pt-2">
                   <ul className="list-disc list-inside space-y-1 pl-2">
@@ -121,7 +139,7 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
             )}
 
             {agent.protocolExtensions && Object.keys(agent.protocolExtensions).filter(k => k !== "@type").length > 0 && (
-              <AccordionItem value="item-4">
+              <AccordionItem value="item-protocol-extensions">
                 <AccordionTrigger className="text-lg font-semibold"><GitBranch className="mr-2 h-5 w-5 text-primary"/>Protocol Extensions</AccordionTrigger>
                 <AccordionContent className="pt-2 space-y-3">
                   {Object.entries(agent.protocolExtensions)
@@ -136,23 +154,8 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
               </AccordionItem>
             )}
             
-            <AccordionItem value="item-5">
-                <AccordionTrigger className="text-lg font-semibold"><ShieldQuestion className="mr-2 h-5 w-5 text-primary"/>Registry Info (ANS/NANDA)</AccordionTrigger>
-                <AccordionContent className="pt-2 space-y-1">
-                    {agent.ansName && <p className="text-sm text-foreground"><Tag className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>ANS Name:</strong> {agent.ansName}</p>}
-                    <p className="text-sm text-foreground"><Globe className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>Agent DID:</strong> {agent.id}</p>
-                    {agent.addr_facts_url && <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground">Facts URL:</strong> {agent.addr_facts_url}</p>}
-                    {agent.addr_ttl && <p className="text-sm text-foreground"><Clock className="inline h-4 w-4 mr-1.5 text-muted-foreground"/><strong>Addr TTL:</strong> {agent.addr_ttl} seconds</p>}
-                    {agent.registeredAt && (
-                        <p className="text-sm text-foreground"><CalendarDays className="inline h-4 w-4 mr-1.5 text-muted-foreground"/>
-                        <strong>Registered:</strong> {new Date(agent.registeredAt).toLocaleString()}
-                        </p>
-                    )}
-                </AccordionContent>
-            </AccordionItem>
-
             {agent.signature && (
-              <AccordionItem value="item-6">
+              <AccordionItem value="item-signature">
                 <AccordionTrigger className="text-lg font-semibold"><Fingerprint className="mr-2 h-5 w-5 text-primary"/>Signature Details</AccordionTrigger>
                 <AccordionContent className="pt-2 space-y-1">
                   <p className="text-sm text-foreground"><strong className="text-muted-foreground">Type:</strong> {agent.signature.type}</p>

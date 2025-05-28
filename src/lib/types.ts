@@ -29,8 +29,8 @@ export interface ProtocolExtensionSet {
 
 // Represents the detailed information about an agent
 export interface AgentFacts {
-  id: string; // Agent's own DID, primary key
-  ansName?: string; // Full ANS name, e.g., "a2a://myTranslator.DocumentTranslation.LinguaCorp.v1.2.certified"
+  id: string; // Agent's own DID, primary key (NANDA Identifier)
+  ansName?: string; // Full ANS name, e.g., "a2a://myTranslator.DocumentTranslation.LinguaCorp.v1.2.certified" (ANS Capability Address)
   name: string; // User-friendly display name for the agent
   capability: string; // Primary capability for display
   capabilities?: string[]; // Full list of capabilities
@@ -43,16 +43,17 @@ export interface AgentFacts {
   protocolExtensions?: ProtocolExtensionSet;
   signature?: AgentSignature; // Signature by agent or publisher
   avatarUrl?: string; // Optional URL for agent's avatar image
+  dataAiHint?: string; // Keywords for AI-assisted placeholder image generation
   registeredAt?: string; // ISO date string
 }
 
 // Represents the pointer to AgentFacts stored in the NANDA+ANS registry
 export interface AgentAddr {
   agent_id: string; // DID, should match AgentFacts.id
-  facts_url: string;
+  facts_url: string; // NANDA pointer to the AgentFacts URL
   private_facts_url?: string;
   adaptive_router_url?: string;
-  ttl: number;
+  ttl: number; // Time-to-live for this NANDA record
   signature: AgentSignature; // Signature from the registry shard
 }
 
@@ -60,9 +61,8 @@ export interface AgentAddr {
 // It merges essential fields from AgentFacts and AgentAddr.
 export interface Agent extends AgentFacts {
   // AgentFacts fields are inherited.
-  // We can add specific fields from AgentAddr if needed directly, or assume they are part of AgentFacts for simplicity in UI.
-  // For example, ttl from AgentAddr might be useful to display.
-  addr_ttl?: number;
-  addr_facts_url?: string; // To distinguish from a facts_url possibly within AgentFacts itself.
+  // We can add specific fields from AgentAddr if needed directly.
+  addr_ttl?: number; // TTL from NANDA AgentAddr
+  addr_facts_url?: string; // facts_url from NANDA AgentAddr, distinguishing it if AgentFacts also had a facts_url.
   aiSummary?: string; // To be populated by GenAI
 }

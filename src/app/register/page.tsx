@@ -54,8 +54,8 @@ export default function RegisterAgentPage() {
       title: "Registration Submitted (Conceptual)",
       description: (
         <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <p className="text-white">Agent {data.agentName} registration conceptually submitted.</p>
-          <p className="text-white text-xs mt-1">This would involve creating signed AgentAddr pointers to your AgentFacts, leveraging cryptographic assurance.</p>
+          <p className="text-white">Agent {data.agentName} registration submitted.</p>
+          <p className="text-white text-xs mt-1">This process would typically create a NANDA AgentAddr (a signed pointer including DID, Facts URL, TTL) to your AgentFacts, secured within the NANDA+ANS dual-trust framework.</p>
           <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
             <code className="text-white text-xs">{JSON.stringify(data, null, 2)}</code>
           </pre>
@@ -75,7 +75,7 @@ export default function RegisterAgentPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Securely add your agent to the NANDA+ANS ecosystem. Provide details to establish its verifiable identity (CA-signed or DID-based) and cryptographically assured capabilities, contributing to a resilient Internet of AI Agents.
+            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer) that directs to your detailed `AgentFacts` (verifiable metadata). This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities, contributing to a resilient Internet of AI Agents.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -104,7 +104,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input placeholder="did:nanda:your-agent-identifier" {...field} />
                     </FormControl>
-                    <FormDescription>The unique DID for your agent, supporting CA-signed or self-sovereign identities (e.g., did:nanda:xyz, did:web:example.com).</FormDescription>
+                    <FormDescription>The agent's unique Decentralized Identifier (DID), serving as its NANDA root identity (e.g., did:nanda:xyz, did:web:example.com).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -118,7 +118,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input placeholder="e.g., DataAnalysis, ImageGeneration" {...field} />
                     </FormControl>
-                    <FormDescription>The main, verifiable function your agent provides.</FormDescription>
+                    <FormDescription>The main, verifiable function your agent provides. This often forms part of its ANS Name.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -136,7 +136,7 @@ export default function RegisterAgentPage() {
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>A detailed description contributing to the agent's discoverable and verifiable AgentFacts.</FormDescription>
+                    <FormDescription>A detailed description contributing to the agent's discoverable and verifiable AgentFacts (ANS metadata).</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -150,7 +150,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input type="url" placeholder="https://example.com/.well-known/agent-facts.jsonld" {...field} />
                     </FormControl>
-                    <FormDescription>The publicly accessible URL to your agent's cryptographically verifiable AgentFacts (JSON-LD).</FormDescription>
+                    <FormDescription>The publicly accessible URL to your agent's cryptographically verifiable AgentFacts (JSON-LD). The NANDA registry will create a signed pointer (AgentAddr) to this URL.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
