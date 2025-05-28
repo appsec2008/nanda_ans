@@ -17,7 +17,7 @@ const Header = () => {
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
           <BotMessageSquare className="h-7 w-7 text-primary" />
           <span className="text-xl font-bold tracking-tight text-foreground">
-            AgentVerse <span className="text-primary">Registry</span>
+            AgentVerse <span className="text-primary">Registry</span> - NANDA+ANS
           </span>
         </Link>
 
@@ -46,7 +46,7 @@ const Header = () => {
               <div className="grid gap-4 py-6">
                 <Link href="/" className="flex items-center gap-2 mb-4 px-2" prefetch={false}>
                   <BotMessageSquare className="h-6 w-6 text-primary" />
-                  <span className="text-lg font-semibold text-foreground">AgentVerse Registry</span>
+                  <span className="text-lg font-semibold text-foreground">AgentVerse Registry - NANDA+ANS</span>
                 </Link>
                 {navItems.map((item) => (
                   <Link
