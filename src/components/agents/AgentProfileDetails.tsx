@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import AgentCapabilityIcon from '@/components/icons/AgentCapabilityIcon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ShieldQuestion, Globe, GitBranch, Tag, Info, Layers3, PlugZap, CalendarDays, Clock, Fingerprint } from 'lucide-react';
 
 interface AgentProfileDetailsProps {
   agent: Agent;
@@ -150,6 +150,19 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
                     )}
                 </AccordionContent>
             </AccordionItem>
+
+            {agent.signature && (
+              <AccordionItem value="item-6">
+                <AccordionTrigger className="text-lg font-semibold"><Fingerprint className="mr-2 h-5 w-5 text-primary"/>Signature Details</AccordionTrigger>
+                <AccordionContent className="pt-2 space-y-1">
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Type:</strong> {agent.signature.type}</p>
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Created:</strong> {new Date(agent.signature.created).toLocaleString()}</p>
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Verification Method:</strong> {agent.signature.verificationMethod}</p>
+                  <p className="text-sm text-foreground"><strong className="text-muted-foreground">Proof Purpose:</strong> {agent.signature.proofPurpose}</p>
+                  <p className="text-sm text-foreground break-all"><strong className="text-muted-foreground">Proof Value:</strong> {agent.signature.proofValue}</p>
+                </AccordionContent>
+              </AccordionItem>
+            )}
 
           </Accordion>
         </CardContent>
