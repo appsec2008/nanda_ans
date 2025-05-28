@@ -1,6 +1,7 @@
+
 // src/app/agents/[id]/page.tsx
 import { notFound } from 'next/navigation';
-import { getAgentById } from '@/lib/mock-data';
+import { getAgentById } from '@/lib/agent-service'; // Updated import
 import AgentProfileDetails from '@/components/agents/AgentProfileDetails';
 import { generateAgentSummary } from '@/ai/flows/agent-summary'; // GenAI import
 import type { AgentSummaryInput, AgentSummaryOutput } from '@/ai/flows/agent-summary';
@@ -17,8 +18,6 @@ interface AgentProfilePageProps {
 }
 
 export async function generateMetadata({ params }: AgentProfilePageProps) {
-  // DIDs can contain characters like ':', which might be URL-encoded in path segments.
-  // Ensure the ID is decoded before using it for lookup.
   const decodedId = decodeURIComponent(params.id);
   const agent = await getAgentById(decodedId);
   if (!agent) {
@@ -33,8 +32,6 @@ export async function generateMetadata({ params }: AgentProfilePageProps) {
 }
 
 export default async function AgentProfilePage({ params }: AgentProfilePageProps) {
-  // DIDs can contain characters like ':', which might be URL-encoded in path segments.
-  // Ensure the ID is decoded before using it for lookup.
   const decodedId = decodeURIComponent(params.id);
   const agent = await getAgentById(decodedId);
 

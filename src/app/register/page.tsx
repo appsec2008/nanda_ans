@@ -1,3 +1,4 @@
+
 // src/app/register/page.tsx
 "use client";
 
@@ -19,15 +20,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle }  from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { BotMessageSquare, ShieldPlus } from "lucide-react";
+import { db } from '@/lib/firebase'; // Firebase import
+import { doc, setDoc } from 'firebase/firestore'; // Firestore functions
+import type { Agent } from '@/lib/types';
 
 const realisticDefaults = {
   agentName: "My New AI Agent",
-  agentDID: "did:nanda:new-agent-placeholder-123",
+  agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // More unique default DID
   capability: "Generic AI Task",
   description: "This is a newly registered AI agent. Its purpose is to perform general tasks and integrate within the NANDA+ANS ecosystem. Specific capabilities and details will be updated in its AgentFacts.",
   factsUrl: "https://example.com/.well-known/agent-facts-default.jsonld",
   providerName: "Independent Developer",
   version: "0.1.0-alpha",
+  ansName: "", // Optional, can be derived or set later
+  capabilities: ["Generic AI Task"], // Default capability array
+  attestations: [],
+  avatarUrl: 'https://placehold.co/100x100.png',
+  dataAiHint: 'agent avatar',
+  addr_ttl: 3600,
 };
 
 const agentRegistrationSchema = z.object({
@@ -41,6 +51,7 @@ const agentRegistrationSchema = z.object({
   factsUrl: z.string().url({ message: "Please enter a valid URL for AgentFacts if provided." }).optional().or(z.literal("")),
   providerName: z.string().optional().or(z.literal("")),
   version: z.string().optional().or(z.literal("")),
+  ansName: z.string().optional().or(z.literal("")), // Added ansName
 });
 
 type AgentRegistrationFormValues = z.infer<typeof agentRegistrationSchema>;
@@ -48,36 +59,77 @@ type AgentRegistrationFormValues = z.infer<typeof agentRegistrationSchema>;
 export default function RegisterAgentPage() {
   const form = useForm<AgentRegistrationFormValues>({
     resolver: zodResolver(agentRegistrationSchema),
-    defaultValues: realisticDefaults,
+    defaultValues: { // Pre-fill form with defaults
+      agentName: realisticDefaults.agentName,
+      agentDID: realisticDefaults.agentDID,
+      capability: realisticDefaults.capability,
+      description: realisticDefaults.description,
+      factsUrl: realisticDefaults.factsUrl,
+      providerName: realisticDefaults.providerName,
+      version: realisticDefaults.version,
+      ansName: realisticDefaults.ansName,
+    },
+    mode: "onChange", // Validate on change for better UX
   });
 
-  function onSubmit(data: AgentRegistrationFormValues) {
-    // Use realistic defaults for any fields left empty by the user
-    const finalData = {
-      agentName: data.agentName?.trim() || realisticDefaults.agentName,
-      agentDID: data.agentDID?.trim() || realisticDefaults.agentDID,
+  async function onSubmit(data: AgentRegistrationFormValues) {
+    const agentId = data.agentDID?.trim() || realisticDefaults.agentDID;
+
+    const agentToRegister: Agent = {
+      id: agentId,
+      name: data.agentName?.trim() || realisticDefaults.agentName,
+      ansName: data.ansName?.trim() || `${data.providerName?.trim() || realisticDefaults.providerName}.${data.capability?.trim() || realisticDefaults.capability}.${agentId.split(':').pop()}`.toLowerCase().replace(/\s+/g, ''), // Example ANS name
       capability: data.capability?.trim() || realisticDefaults.capability,
-      description: data.description?.trim() || realisticDefaults.description,
-      factsUrl: data.factsUrl?.trim() || realisticDefaults.factsUrl,
-      providerName: data.providerName?.trim() || realisticDefaults.providerName,
+      capabilities: data.capability?.trim() ? [data.capability.trim()] : realisticDefaults.capabilities,
+      provider: data.providerName?.trim() || realisticDefaults.providerName,
       version: data.version?.trim() || realisticDefaults.version,
+      description: data.description?.trim() || realisticDefaults.description,
+      addr_facts_url: data.factsUrl?.trim() || realisticDefaults.factsUrl, // NANDA facts URL pointer
+      attestations: realisticDefaults.attestations,
+      avatarUrl: realisticDefaults.avatarUrl,
+      dataAiHint: data.agentName?.trim() ? data.agentName.trim().toLowerCase().split(' ').slice(0,2).join(' ') : realisticDefaults.dataAiHint,
+      registeredAt: new Date().toISOString(),
+      addr_ttl: realisticDefaults.addr_ttl,
+      // Optional fields from AgentFacts can be added here if needed, e.g. endpoints, protocolExtensions, signature
+      // For simplicity, these are omitted from the form but could be part of a more advanced registration
     };
 
-    console.log("Agent Registration Data (Final):", finalData);
-    toast({
-      title: "Registration Submitted (Conceptual)",
-      description: (
-        <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <p className="text-white">Agent {finalData.agentName} registration submitted.</p>
-          <p className="text-white text-xs mt-1">This process would typically create a NANDA AgentAddr (a signed pointer including DID, Facts URL, TTL) to your AgentFacts, secured within the NANDA+ANS dual-trust framework using default or provided values.</p>
-          <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
-            <code className="text-white text-xs">{JSON.stringify(finalData, null, 2)}</code>
-          </pre>
-        </div>
-      ),
-      variant: "default",
-    });
-    // form.reset(realisticDefaults); // Optionally reset form to defaults after submission
+    try {
+      await setDoc(doc(db, "agents", agentToRegister.id), agentToRegister);
+      console.log("Agent Registration Data (Final to Firestore):", agentToRegister);
+      toast({
+        title: "Agent Registered Successfully!",
+        description: (
+          <div className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+            <p className="text-white">Agent {agentToRegister.name} (ID: {agentToRegister.id}) has been registered to Firestore.</p>
+            <p className="text-white text-xs mt-1">This agent is now discoverable. Its NANDA AgentAddr points to its AgentFacts.</p>
+            <pre className="mt-2 w-full rounded-md bg-slate-900 p-2">
+              <code className="text-white text-xs">{JSON.stringify(agentToRegister, null, 2)}</code>
+            </pre>
+          </div>
+        ),
+        variant: "default",
+      });
+      // Reset form with new unique DID for next registration
+      form.reset({
+        ...realisticDefaults,
+        agentDID: `did:nanda:agent-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // New unique default DID
+        agentName: realisticDefaults.agentName, // Keep other defaults for ease of multiple registrations
+        capability: realisticDefaults.capability,
+        description: realisticDefaults.description,
+        factsUrl: realisticDefaults.factsUrl,
+        providerName: realisticDefaults.providerName,
+        version: realisticDefaults.version,
+        ansName: "",
+      });
+    } catch (error) {
+      console.error("Error registering agent to Firestore:", error);
+      toast({
+        title: "Registration Failed",
+        description: `Could not save agent to database. Error: ${error instanceof Error ? error.message : String(error)}`,
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -89,7 +141,7 @@ export default function RegisterAgentPage() {
           </div>
           <CardTitle className="text-3xl font-bold">Register New Agent</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities.
+            Add your agent to the NANDA+ANS ecosystem. Registration involves creating a NANDA `AgentAddr` (a lightweight, signed pointer stored in Firestore) that directs to your detailed `AgentFacts` (verifiable metadata). All fields are optional; if left blank, sensible defaults will be used. This establishes your agent's identity (CA-signed or DID-based) and cryptographically assured capabilities.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -118,7 +170,7 @@ export default function RegisterAgentPage() {
                     <FormControl>
                       <Input placeholder={realisticDefaults.agentDID} {...field} />
                     </FormControl>
-                    <FormDescription>The agent's unique DID, its NANDA root identity. (Optional, defaults will be used if blank)</FormDescription>
+                    <FormDescription>The agent's unique DID (NANDA root identity). This will be used as the database ID. (Optional, a unique default will be generated)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -133,6 +185,20 @@ export default function RegisterAgentPage() {
                       <Input placeholder={realisticDefaults.capability} {...field} />
                     </FormControl>
                     <FormDescription>The main function your agent provides. (Optional, defaults will be used if blank)</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="ansName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ANS Name (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., provider.capability.agentid.v1" {...field} />
+                    </FormControl>
+                    <FormDescription>Agent Name Service (ANS) string for capability-based addressing. (Optional, a default will be constructed if blank)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -160,7 +226,7 @@ export default function RegisterAgentPage() {
                 name="factsUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>AgentFacts URL</FormLabel>
+                    <FormLabel>AgentFacts URL (NANDA Pointer Target)</FormLabel>
                     <FormControl>
                       <Input type="url" placeholder={realisticDefaults.factsUrl} {...field} />
                     </FormControl>
@@ -199,8 +265,8 @@ export default function RegisterAgentPage() {
                   )}
                 />
               </div>
-              <Button type="submit" className="w-full" size="lg">
-                Register Agent (Conceptual)
+              <Button type="submit" className="w-full" size="lg" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Registering..." : "Register Agent to Database"}
               </Button>
             </form>
           </Form>

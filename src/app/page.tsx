@@ -1,9 +1,10 @@
+
 // src/app/page.tsx
 "use client"; // For client-side search filtering
 
 import { useState, useEffect, useMemo } from 'react';
 import type { Agent } from '@/lib/types';
-import { getAllAgents } from '@/lib/mock-data';
+import { getAllAgents } from '@/lib/agent-service'; // Updated import
 import AgentCard from '@/components/agents/AgentCard';
 import AgentSearchForm from '@/components/agents/AgentSearchForm';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -59,7 +60,7 @@ export default function DiscoverAgentsPage() {
           Discover Verifiable AI Agents
         </h1>
         <p className="max-w-3xl mx-auto text-lg text-muted-foreground">
-          Explore a tamper-evident, dual-trust registry for AI agents. Our NANDA+ANS architecture uses a decoupled, two-hop lookup model: the core NANDA Registry (Anchor Tier) provides lightweight, signed pointers (AgentAddr) to detailed, cryptographically verifiable AgentFacts (Metadata Distribution Tier, structured by ANS principles). Discover agents with assured capabilities through privacy-preserving techniques, building a resilient and trustworthy Internet of AI Agents.
+          Explore a tamper-evident, dual-trust registry for AI agents. Our NANDA+ANS architecture uses a decoupled, two-hop lookup model: the core NANDA Registry (Anchor Tier, now leveraging Firestore) provides lightweight, signed pointers (AgentAddr) to detailed, cryptographically verifiable AgentFacts (Metadata Distribution Tier, structured by ANS principles). Discover agents with assured capabilities through privacy-preserving techniques, building a resilient and trustworthy Internet of AI Agents.
         </p>
       </section>
 
@@ -78,7 +79,7 @@ export default function DiscoverAgentsPage() {
       )}
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {[...Array(6)].map((_, i) => (
             <CardSkeleton key={i} />
           ))}
@@ -94,7 +95,7 @@ export default function DiscoverAgentsPage() {
            <BotMessageSquare className="h-4 w-4" />
            <AlertTitle>No Agents Found</AlertTitle>
            <AlertDescription>
-             Your search for "{searchTerm}" did not match any agents. Try a different term or explore all agents.
+             Your search for "{searchTerm}" did not match any agents. Try a different term or explore all agents. If this is your first time, try registering an agent!
            </AlertDescription>
         </Alert>
       )}
