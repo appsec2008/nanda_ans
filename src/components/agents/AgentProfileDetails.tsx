@@ -40,10 +40,10 @@ const AgentProfileDetails = ({ agent, aiSummary }: AgentProfileDetailsProps) => 
                 </p>
               )}
               {agent.version && (
-                 <p className="text-sm text-muted-foreground mt-1">
+                 <div className="text-sm text-muted-foreground mt-1"> {/* Changed p to div here */}
                   Version: <Badge variant="secondary">{agent.version}</Badge>
                   {agent.extension && <Badge variant="outline" className="ml-2">{agent.extension}</Badge>}
-                </p>
+                </div>
               )}
             </div>
           </div>
